@@ -17,27 +17,52 @@ docs = [
     "游戏的音乐如同一首跨越千年的史诗。古琴与管弦交织出战斗的激昂，笛萧与木鱼谱写禅意空灵。而当悟空踏入重要场景时，古风配乐更是让人仿佛穿越回那个神话的年代。"
     ] 
 
-# 2. 设置嵌入模型
+# 2. 设置嵌入模型: 将文本转换为向量
+# -----------------------------------
+# 加载预训练的 Sentence Transformer 模型。
+# 该模型内部会进行分词，然后通过 Transformer 网络处理，最后进行池化 (Pooling)，
+# 最终将每个输入的文本字符串转换为一个固定维度的数值向量 (嵌入)。
 from sentence_transformers import SentenceTransformer
 model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+# 对文档列表中的每个文档进行编码，得到嵌入向量。
+# doc_embeddings 是一个 NumPy 数组，形状为 (文档数量, 嵌入维度)，例如 (9, 384)。
+# 每一行代表一个文档的语义向量表示。
 doc_embeddings = model.encode(docs)
 print(f"文档向量维度: {doc_embeddings.shape}")
 
-# 3. 创建向量存储
+# 3. 创建向量存储: 构建可供快速检索的索引
+# --------------------------------------
 import faiss # pip install faiss-cpu
 import numpy as np
+# 获取嵌入向量的维度，用于初始化 Faiss 索引。
 dimension = doc_embeddings.shape[1]
+# 创建一个 Faiss 索引。IndexFlatL2 表示：
+# - IndexFlat: 存储原始向量，进行精确但可能是暴力的搜索。
+# - L2: 使用 L2 距离 (欧氏距离) 作为向量间相似度的度量标准。距离越小越相似。
 index = faiss.IndexFlatL2(dimension)
+# 将所有文档的嵌入向量添加到 Faiss 索引中。
+# Faiss 需要 float32 类型的数据。
 index.add(doc_embeddings.astype('float32'))
 print(f"向量数据库中的文档数量: {index.ntotal}")
 
-# 4. 执行相似度检索
+# 4. 执行相似度检索: 查找与问题最相关的文档
+# ---------------------------------------
 question = "黑神话悟空的战斗系统有什么特点?"
+# 关键步骤：使用 *相同的* Sentence Transformer 模型将问题文本也转换为嵌入向量。
+# 确保问题向量和文档向量在同一个语义空间中。
 query_embedding = model.encode([question])[0]
+# 在 Faiss 索引中搜索与查询向量 query_embedding 最相似的 k 个向量。
+# - 第一个参数: 查询向量 (需要是 NumPy 数组，通常 float32)。
+# - k=3: 指定返回最相似的 3 个结果。
+# - 输出:
+#   - distances: 查询向量与找到的 k 个向量之间的 L2 距离。
+#   - indices: 找到的 k 个向量在原始添加到索引时的 *索引号* (位置)。
 distances, indices = index.search(
     np.array([query_embedding]).astype('float32'), 
     k=3
 )
+# 使用 indices 中返回的索引号，从原始的 docs 列表中提取出对应的文本内容。
+# indices[0] 包含了具体的索引号列表，例如 [5, 0, 2]。
 context = [docs[idx] for idx in indices[0]]
 print("\n检索到的相关文档:")
 for i, doc in enumerate(context, 1):
@@ -54,12 +79,14 @@ prompt = f"""根据以下参考信息回答问题，并给出信息源编号。
 # 6. 使用DeepSeek生成答案
 from openai import OpenAI
 client = OpenAI(
-    api_key=os.getenv("DEEPSEEK_API_KEY"),
-    base_url="https://api.deepseek.com/v1"
+    # api_key=os.getenv("DEEPSEEK_API_KEY"), # 原始 DeepSeek API Key 的环境变量名
+    api_key=os.getenv("OPENAI_API_KEY"), # 从环境变量获取中转站 Key
+    # base_url="https://api.deepseek.com/v1" # 原始直接调用 DeepSeek API 的 Base URL
+    base_url=os.getenv("OPENAI_API_BASE") # 从环境变量获取中转站 Base URL
 )
 
 response = client.chat.completions.create(
-    model="deepseek-chat",  
+    model="deepseek-ai/DeepSeek-V3-0324", # 修改为指定模型
     messages=[{
         "role": "user",
         "content": prompt

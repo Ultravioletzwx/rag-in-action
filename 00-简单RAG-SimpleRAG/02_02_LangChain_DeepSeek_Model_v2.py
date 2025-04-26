@@ -54,15 +54,17 @@ prompt = ChatPromptTemplate.from_template("""
 from langchain_openai import ChatOpenAI
 
 llm = ChatOpenAI(
-    model="deepseek-reasoner",  # DeepSeek API 支持的模型名称
-    base_url="https://api.deepseek.com/v1",
+    model="deepseek-ai/DeepSeek-V3-0324",  # 修改为指定模型
+    # base_url="https://api.deepseek.com/v1", # 原始直接调用 DeepSeek API 的 Base URL
+    openai_api_base=os.getenv("OPENAI_API_BASE"), # 从环境变量获取中转站 Base URL
     temperature=0.7,        # 控制输出的随机性(0-1之间,越大越随机)
     max_tokens=2048,        # 最大输出长度
     top_p=0.95,            # 控制输出的多样性(0-1之间)
     top_k=50,              # 控制每次选择的候选token数量
     presence_penalty=0.0,   # 重复惩罚系数(-2.0到2.0之间)
     frequency_penalty=0.0,  # 频率惩罚系数(-2.0到2.0之间)
-    api_key=os.getenv("DEEPSEEK_API_KEY")  # 从环境变量加载API key
+    # api_key=os.getenv("DEEPSEEK_API_KEY")  # 原始 DeepSeek API Key 的环境变量名
+    openai_api_key=os.getenv("OPENAI_API_KEY") # 从环境变量获取中转站 Key
 )
 answer = llm.invoke(prompt.format(question=question, context=docs_content))
 print(answer)

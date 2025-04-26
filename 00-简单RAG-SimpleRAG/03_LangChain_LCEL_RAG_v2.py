@@ -41,12 +41,20 @@ from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 
-from langchain_deepseek import ChatDeepSeek
+# from langchain_deepseek import ChatDeepSeek # 移除 DeepSeek 的导入
 import os
 from dotenv import load_dotenv
 # 加载环境变量
 load_dotenv()
-llm = ChatDeepSeek(model="deepseek-chat", api_key=os.getenv("DEEPSEEK_API_KEY"))
+# llm = ChatDeepSeek(model="deepseek-chat", api_key=os.getenv("DEEPSEEK_API_KEY")) # 注释掉原始的 DeepSeek LLM
+
+# 配置 LLM 使用中转站
+llm = ChatOpenAI(
+    model="deepseek-ai/DeepSeek-V3-0324", # 使用中转站支持的模型名称
+    openai_api_key=os.getenv("OPENAI_API_KEY"), # 从环境变量获取中转站 Key
+    openai_api_base=os.getenv("OPENAI_API_BASE") # 从环境变量获取中转站 Base URL
+)
+output_parser = StrOutputParser() # 将 StrOutputParser 的实例化移到这里，保持一致性
 
 # 8. 构建 LCEL 链
 # 管道式数据流像使用 Unix 命令管道 (|) 一样，将不同的处理逻辑串联在一起
@@ -63,7 +71,7 @@ chain = (
     # llm输入:提示模板字符串, 输出:ChatMessage对象
     | llm
     # StrOutputParser输入:ChatMessage对象, 输出:回答文本字符串
-    | StrOutputParser()
+    | output_parser # 使用上面实例化的 output_parser
 )
 
 # 查看每个阶段的输入输出
@@ -86,7 +94,7 @@ llm_output = llm.invoke(prompt_output)
 print("LLM输出:", llm_output)
 
 # 5. 解析器阶段
-final_output = StrOutputParser().invoke(llm_output)
+final_output = output_parser.invoke(llm_output) # 使用上面实例化的 output_parser
 print("最终输出:", final_output)
 
 # 9. 执行查询

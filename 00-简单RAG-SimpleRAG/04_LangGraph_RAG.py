@@ -44,7 +44,7 @@ def retrieve(state: State):
 # 8. 定义生成步骤
 def generate(state: State):
     from langchain_openai import ChatOpenAI
-    llm = ChatOpenAI(model="gpt-4")
+    llm = ChatOpenAI(model="gpt-4.1-mini")
     docs_content = "\n\n".join(doc.page_content for doc in state["context"])
     messages = prompt.invoke({"question": state["question"], "context": docs_content})
     response = llm.invoke(messages)

@@ -1,7 +1,8 @@
 # 导入相关的库
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding # 需要pip install llama-index-embeddings-huggingface
-from llama_index.llms.deepseek import DeepSeek  # 需要pip install llama-index-llms-deepseek
+# from llama_index.llms.deepseek import DeepSeek  # 使用 DeepSeek 类，如果直接调用官方 API
+from llama_index.llms.openai_like import OpenAILike # 改为使用 OpenAILike 类来适配中转站
 
 from llama_index.core import Settings # 可以看看有哪些Setting
 # https://docs.llamaindex.ai/en/stable/examples/llm/deepseek/
@@ -17,14 +18,16 @@ import os
 # 加载 .env 文件中的环境变量
 load_dotenv()
 
-# 创建 Deepseek LLM（通过API调用最新的DeepSeek大模型）
-llm = DeepSeek(
-    model="deepseek-reasoner", # 使用最新的推理模型R1
-    api_key=os.getenv("DEEPSEEK_API_KEY")  # 从环境变量获取API key
+# 创建 OpenAILike LLM（通过中转站调用 DeepSeek 模型）
+llm = OpenAILike(
+    model="deepseek-ai/DeepSeek-V3-0324",  # 使用中转台提供的模型名称
+    api_key=os.getenv("OPENAI_API_KEY"),  # 从环境变量获取中转台的Key
+    api_base=os.getenv("OPENAI_API_BASE"), # 从环境变量获取中转台的Base URL
+    is_chat_model=True # 明确指定这是一个聊天模型
 )
 
 # 加载数据
-documents = SimpleDirectoryReader(input_files=["90-文档-Data/黑悟空/设定.txt"]).load_data() 
+documents = SimpleDirectoryReader(input_files=["90-文档-Data/黑悟空/黑悟空设定.txt"]).load_data() 
 
 # 构建索引
 index = VectorStoreIndex.from_documents(

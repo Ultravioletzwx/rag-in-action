@@ -48,6 +48,6 @@ prompt = ChatPromptTemplate.from_template("""
 
 # 8. 使用大语言模型生成答案
 from langchain_ollama import ChatOllama # pip install langchain-ollama
-llm = ChatOllama(model=os.getenv("OLLAMA_MODEL"))
+llm = ChatOllama(model=os.getenv("OLLAMA_MODEL"), base_url="http://127.0.0.1:11434")
 answer = llm.invoke(prompt.format(question=question, context=docs_content))
 print(answer.content)

@@ -12,11 +12,15 @@ loader = WebBaseLoader(
 )
 docs = loader.load()
 
+
 # 2. 文档分块
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
 all_splits = text_splitter.split_documents(docs)
+from pprint import pprint
+# pprint(f'all_splits[1]: {all_splits[1] }')
+# print(f'len(all_splits): {len(all_splits)}')
 
 # 3. 设置嵌入模型
 from langchain_huggingface import HuggingFaceEmbeddings # pip install langchain-huggingface
@@ -39,6 +43,8 @@ question = "黑悟空有哪些游戏场景？"
 # 6. 在向量存储中搜索相关文档，并准备上下文内容
 retrieved_docs = vector_store.similarity_search(question, k=3)
 docs_content = "\n\n".join(doc.page_content for doc in retrieved_docs)
+# pprint(f'docs_content: {docs_content}')
+
 
 # 7. 构建提示模板
 from langchain_core.prompts import ChatPromptTemplate
@@ -52,13 +58,15 @@ prompt = ChatPromptTemplate.from_template("""
                                           )
 
 # 8. 使用大语言模型生成答案
-from langchain_deepseek import ChatDeepSeek # pip install langchain-deepseek
+# from langchain_deepseek import ChatDeepSeek # 原始导入，用于直接调用 DeepSeek API
+from langchain_openai import ChatOpenAI # 使用 ChatOpenAI 适配 OpenAI 兼容接口（如中转站）
 
-llm = ChatDeepSeek(
-    model="deepseek-chat",  # DeepSeek API 支持的模型名称
+llm = ChatOpenAI(
+    model="deepseek-ai/DeepSeek-V3-0324",  # 修改为指定模型
     temperature=0.7,        # 控制输出的随机性
     max_tokens=2048,        # 最大输出长度
-    api_key=os.getenv("DEEPSEEK_API_KEY")  # 从环境变量加载API key
+    openai_api_key=os.getenv("OPENAI_API_KEY"),  # 从环境变量获取中转站 Key
+    openai_api_base=os.getenv("OPENAI_API_BASE") # 从环境变量获取中转站 Base URL
 )
 answer = llm.invoke(prompt.format(question=question, context=docs_content))
 print(answer)

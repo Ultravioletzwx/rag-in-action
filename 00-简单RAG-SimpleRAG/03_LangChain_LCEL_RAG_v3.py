@@ -50,7 +50,7 @@ from langchain_ollama import ChatOllama
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 
-llm = ChatOllama(model=os.getenv("OLLAMA_MODEL"))
+llm = ChatOllama(model=os.getenv("OLLAMA_MODEL"), base_url="http://127.0.0.1:11434")
 
 # 8. 构建 LCEL 链
 # 管道式数据流像使用 Unix 命令管道 (|) 一样，将不同的处理逻辑串联在一起
@@ -73,26 +73,27 @@ chain = (
 # 查看每个阶段的输入输出
 question = "测试问题"
 
-# 1. 检索器阶段
-retriever_output = retriever.invoke(question)
-print("检索器输出:", retriever_output)
+# # 1. 检索器阶段
+# retriever_output = retriever.invoke(question)
+# print("检索器输出:", retriever_output)
 
-# 2. 合并文档阶段
-context = "\n\n".join(doc.page_content for doc in retriever_output)
-print("合并文档输出:", context)
+# # 2. 合并文档阶段
+# context = "\n\n".join(doc.page_content for doc in retriever_output)
+# print("合并文档输出:", context)
 
-# 3. 提示模板阶段
-prompt_output = prompt.invoke({"context": context, "question": question})
-print("提示模板输出:", prompt_output)
+# # 3. 提示模板阶段
+# prompt_output = prompt.invoke({"context": context, "question": question})
+# print("提示模板输出:", prompt_output)
 
-# 4. LLM阶段
-llm_output = llm.invoke(prompt_output)
-print("LLM输出:", llm_output)
+# # 4. LLM阶段
+# llm_output = llm.invoke(prompt_output)
+# print("LLM输出:", llm_output)
 
-# 5. 解析器阶段
-final_output = StrOutputParser().invoke(llm_output)
-print("最终输出:", final_output)
+# # 5. 解析器阶段
+# final_output = StrOutputParser().invoke(llm_output)
+# print("最终输出:", final_output)
 
 # 9. 执行查询
 question = "黑悟空有哪些游戏场景？"
 response = chain.invoke(question) # 同步，可以换成异步执行
+print(response)
