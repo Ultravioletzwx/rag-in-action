@@ -258,3 +258,80 @@ GitHub 自 2021 年 8 月起不再支持使用账户密码进行 HTTPS Git 操�
 *   `NO_PROXY` 中的地址用逗号分隔，通常不需要包含端口号，且对 `localhost` 和 `127.0.0.1` 都进行设置比较保险。
 *   关闭 Clash 后，脚本访问外部网站的请求会因为找不到 `HTTP_PROXY`/`HTTPS_PROXY` 指定的代理服务器而失败（通常是 Connection Refused），但访问本地服务的请求因 `NO_PROXY` 设置仍然可以成功。
 
+## 9. 在特性分支修改后，同步上游并推送 Fork，处理潜在冲突
+
+**用户问题：** 我现在处于 `simple-rag-study-v1` 分支上，已经对 `00-简单RAG-SimpleRAG` 目录下的代码进行了修改。我想要把这些代码推送到我自己的 GitHub 仓库 (`origin`)，但同时我也想更新来自原始上游仓库 (`upstream`) 的代码变动。考虑到上游仓库可能也对 `00-简单RAG-SimpleRAG` 目录进行了修改，我应该如何处理这种情况，特别是可能出现的合并冲突？
+
+**解决方案与步骤：**
+
+这是一个常见的协作流程，关键在于 **先同步上游的更改并解决本地冲突，再将你的最终版本推送到你自己的 Fork 仓库**。推荐的工作流程如下：
+
+1.  **确保你的本地修改已提交：**
+    *   在你的特性分支 (`simple-rag-study-v1`) 上，检查工作区状态：
+        ```bash
+        git status
+        ```
+    *   添加所有修改的文件：
+        ```bash
+        git add . # 或者具体指定修改的文件/目录
+        ```
+    *   提交你的本地修改：
+        ```bash
+        git commit -m "描述你的修改，例如：Adapt 00-SimpleRAG examples for OpenAI compatibility"
+        ```
+
+2.  **切换到主分支并与上游同步：**
+    *   切换到你的本地主分支（例如 `master` 或 `main`）：
+        ```bash
+        git checkout master # 或者 git checkout main
+        ```
+    *   确保本地主分支是最新的（可选，但推荐）：
+        ```bash
+        git pull origin master # 从你自己的 Fork 拉取主分支的最新状态
+        ```
+    *   从上游仓库抓取最新的更改（这不会修改你的本地文件）：
+        ```bash
+        git fetch upstream
+        ```
+    *   将上游主分支的更改合并到你的本地主分支：
+        ```bash
+        git merge upstream/master # 或者 upstream/main
+        ```
+        *   **注意:** 如果你的本地主分支相较于 `origin/master` 也有修改（通常不推荐直接在主分支修改），这一步也可能产生冲突。推荐保持本地主分支仅用于跟踪上游。
+    *   将更新后的本地主分支推送到你的 Fork (`origin`)：
+        ```bash
+        git push origin master # 或者 main
+        ```
+
+3.  **切换回你的特性分支并合并主分支的更新：**
+    *   切换回你的特性分支：
+        ```bash
+        git checkout simple-rag-study-v1
+        ```
+    *   将刚刚同步更新后的主分支 (`master` 或 `main`) 合并到你的特性分支：
+        ```bash
+        git merge master # 或者 main
+        ```
+        *   **处理潜在冲突：** 这是最可能发生冲突的地方。如果 Git 提示存在冲突（通常在 `00-简单RAG-SimpleRAG` 目录下），你需要：
+            *   打开包含冲突的文件。Git 会用特殊标记（如 `<<<<<<< HEAD`, `=======`, `>>>>>>> master`）标出冲突区域。
+            *   **手动编辑文件**，仔细比较并决定如何合并这些更改，保留你需要的部分，删除 Git 添加的标记。
+            *   编辑完成后，保存文件。
+            *   将解决冲突后的文件添加到暂存区：
+                ```bash
+                git add <有冲突的文件路径> # 例如 git add 00-简单RAG-SimpleRAG/your_modified_file.py
+                ```
+            *   如果所有冲突都已解决并暂存，完成合并提交：
+                ```bash
+                git commit # Git 会自动生成一个合并提交信息，你可以直接保存退出编辑器
+                ```
+        *   如果合并顺利（没有冲突），Git 会自动创建一个合并提交。
+
+4.  **将特性分支推送到你的 Fork (`origin`)：**
+    *   现在你的 `simple-rag-study-v1` 分支既包含了你的修改，也包含了来自上游的最新更新，并且所有冲突都已解决。
+    *   将该分支推送到你的 GitHub Fork：
+        ```bash
+        git push origin simple-rag-study-v1
+        ```
+
+**总结思路：** 特性分支工作 -> 提交本地修改 -> 更新本地主分支与上游同步 -> 将更新后的主分支合并到特性分支 -> **解决特性分支上的合并冲突** -> 推送特性分支到自己的 Fork。这样可以确保你在推送前解决了所有与上游代码的冲突。
+
